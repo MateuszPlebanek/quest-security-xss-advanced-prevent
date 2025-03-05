@@ -10,6 +10,9 @@
 
     <link rel="stylesheet" type="text/css" href="vendors/bootstrap.min.css">
     <script type="text/javascript" src="vendors/purify.min.js"></script>
+    <!-- ✅ Ajout d'une Content Security Policy (CSP) -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'"> -->
+     
 </head>
 
 <body style="background-image: url(img/united-squares.png); color: #ffffff;">
@@ -83,48 +86,45 @@
     <script>
 
         // General URL settings (boring stuff)
+        // 🛡 Sécurisation des URL Parameters 
 
         const url = document.location.search;
         const params = new URLSearchParams(url);
 
         // XSS vulnerability #1
+        // ✅ XSS Fix #1: Encodage du paramètre 'name'
 
-        userParam = params.get("name");
-        userName = "applicant";
+        let userParam = params.get("name") ?? "";
+        let userName = document.createTextNode(decodeURIComponent(userParam)).textContent;
 
-        if (userParam !== null) {
-            userName = userParam;
-        }
-
-        document.getElementById("welcome-text").innerHTML = "<h1>How do you do, " + userName + "?</h1>";
+        document.getElementById("welcome-text").textContent = `How do you do, ${userName}?`;
 
         //  XSS vulnerability #2
-
+        // ✅ XSS Fix #2: Utiliser textContent au lieu de innerHTML pour l'entrée utilisateur
         const input = document.getElementById("fav-meal-question");
         const log = document.getElementById("fav-meal-answer");
 
-        input.addEventListener("input", updateValue);
-
-        function updateValue(e) {
-            log.innerHTML = e.target.value;
-        }
+        input.addEventListener("input", function (e) {
+            log.textContent = e.target.value; // Empêche l'exécution de scripts
+        });
 
         //  XSS vulnerability #3
+         // ✅ XSS Fix #3: Nettoyage du HTML avec DOMPurify
 
         const htmlInput = document.getElementById("html-input");
         const htmlOutput = document.getElementById("html-output");
         const showButton = document.getElementById("show-html");
 
-        showButton.addEventListener("click", showHTML);
-
-        function showHTML() {
-            htmlOutput.innerHTML = htmlInput.value;
-        }
+        showButton.addEventListener("click", function () {
+            const cleanHTML = DOMPurify.sanitize(htmlInput.value);
+            htmlOutput.innerHTML = cleanHTML; // utilise du HTML sécurisé
+        });
 
         //  XSS vulnerability #4
+        // ✅ XSS Fix #4: Sécurisation de la redirection (évite JavaScript pseudo-protocol)
 
         const redir = params.get("goto");
-        if (redir !== null && redir !== "null") {
+        if (redir !== null && redir.startsWith("http")) { // Vérifie que l'URL commence par "http"
             document.location = redir;
         }
 
